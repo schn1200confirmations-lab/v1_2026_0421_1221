@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>F&O Planner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-head"><button id="menuToggle" class="menu-toggle" aria-label="Toggle menu">☰</button><span>MENU</span></div>
+        <button class="nav-item active" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" data-view="planner">Planner Sheet</button>
+        <button class="nav-item" data-view="admin">Admin Menu</button>
+        <button class="nav-item" data-view="admin-revenue">Admin Select Revenue</button>
+        <button class="nav-item" data-view="overview">Idea</button>
+        <button class="nav-item" data-view="idea-select">Idea Select</button>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div class="topbar-left">
+            <h1>F&amp;O Planner Workspace</h1>
+          </div>
+          <input class="search" placeholder="Type to search" />
+        </header>
+
+        <section id="view-dashboard" class="view active-view card">
+          <h2>Dashboard</h2>
+          <p class="muted">Use left menu to switch views. Admin menu is now a completely separate screen.</p>
+          <div class="snapshot" id="snapshot"></div>
+        </section>
+
+        <section id="view-admin" class="view card hidden-view">
+          <div class="section-head">
+            <h2>Admin Menu (Client Master for A/B/C)</h2>
+            <button id="addAdminRow" class="btn">+ Add Client Master</button>
+          </div>
+          <table id="adminTable">
+            <thead>
+              <tr>
+                <th>Client Ref</th>
+                <th>Allocation ID (A)</th>
+                <th>Client Code (B)</th>
+                <th>Client Name (C)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+
+        <section id="view-admin-revenue" class="view card hidden-view">
+          <div class="section-head">
+            <h2>Admin Select Revenue</h2>
+          </div>
+          <table id="adminRevenueTable">
+            <thead>
+              <tr>
+                <th>Client Ref</th>
+                <th>Allocation ID (A)</th>
+                <th>Client Code (B)</th>
+                <th>Client Name (C)</th>
+                <th>Expected Revenue</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <section id="view-overview" class="view card hidden-view">
+          <div class="section-head">
+            <h2>Idea</h2>
+            <button id="addOverviewRow" class="btn">+ Add Idea</button>
+          </div>
+          <table id="overviewTable">
+            <thead>
+              <tr>
+                <th>Idea ID</th>
+                <th>Stock</th>
+                <th>Trade Name</th>
+                <th>Expiry</th>
+                <th>Strike</th>
+                <th>PE/CE</th>
+                <th>BUY/SELL</th>
+                <th>Lot Size</th>
+                <th>Expected Premium Points</th>
+                <th>Expected/Lots RS</th>
+                <th>In Hand Prem</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+
+        <section id="view-idea-select" class="view card hidden-view">
+          <div class="section-head">
+            <h2>Idea Select</h2>
+          </div>
+
+          <div class="idea-tabs">
+            <button class="idea-tab-btn active" data-idea-tab="assign">Assign</button>
+            <button class="idea-tab-btn" data-idea-tab="planner">Idea Planner</button>
+          </div>
+
+          <div id="ideaSelectAssignPanel" class="idea-tab-panel active">
+            <div class="idea-assign-wrap">
+              <div class="assign-controls">
+                <label>Choose Idea ID</label>
+                <div id="ideaSelectList">
+                  <div class="idea-select-row">
+                    <select id="ideaAssignSelect" class="idea-assign-select"></select>
+                  </div>
+                </div>
+                <button id="addAnotherIdeaBtn" class="btn secondary">+ Add another idea</button>
+                <div id="selectedIdeaSnippet" class="idea-snippet"></div>
+                <label class="select-all-row">
+                  <input type="checkbox" id="selectAllClients" />
+                  Select All Clients
+                </label>
+                <button id="deselectAllClients" class="btn secondary">Deselect All</button>
+                <button id="submitIdeaAssign" class="btn">Submit Assignment</button>
+              </div>
+
+              <div class="client-checklist" id="clientChecklist"></div>
+            </div>
+
+            <h3>Assignment Overview</h3>
+            <table id="ideaAssignSummaryTable">
+              <thead>
+                <tr>
+                  <th>Idea ID</th>
+                  <th>Assigned Clients Count</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div id="ideaPlannerPanel" class="idea-tab-panel hidden-view">
+            <div class="section-head">
+              <h3>Idea Planner</h3>
+              <div>
+                <label for="ideaPlannerFilter">Filter by Idea ID</label>
+                <select id="ideaPlannerFilter"></select>
+              </div>
+            </div>
+
+            <table id="ideaPlannerTable">
+              <thead>
+                <tr>
+                  <th>Idea ID</th>
+                  <th>Client Ref</th>
+                  <th>Client Code</th>
+                  <th>Client Name</th>
+                  <th>Stock</th>
+                  <th>Trade Name</th>
+                  <th>Expiry</th>
+                  <th>Strike</th>
+                  <th>PE/CE</th>
+                  <th>BUY/SELL</th>
+                  <th>Lot Size</th>
+                  <th>Expected Premium Points</th>
+                  <th>Expected/Lots RS</th>
+                  <th>In Hand Prem</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-planner" class="view card hidden-view">
+          <div class="section-head">
+            <h2>Planner Sheet</h2>
+            <div class="actions">
+              <button id="addPlannerRow" class="btn">+ Add Planner Row</button>
+              <button id="exportCsv" class="btn secondary">Export CSV</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="plannerTable">
+              <thead>
+                <tr>
+                  <th>Client Ref (Dropdown)</th>
+                  <th>Allocation ID (A)</th>
+                  <th>Client Code (B)</th>
+                  <th>Client Name (C)</th>
+                  <th>Monthly Target</th>
+                  <th>Slot</th>
+                  <th>Idea ID</th>
+                  <th>Stock (Auto)</th>
+                  <th>Intended %</th>
+                  <th>Revenue Needed (Auto)</th>
+                  <th>Expected / Lot (Auto)</th>
+                  <th>Lots Needed (Auto)</th>
+                  <th>Planned Revenue (Auto)</th>
+                  <th>Achieve % (Auto)</th>
+                  <th>Coverage Status (Auto)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
