@@ -14,6 +14,51 @@ const plannerData = [
 
 const clientIdeaAssignment = {};
 const adminExpectedRevenue = {};
+const STORAGE_KEY = 'fno_planner_state_v1';
+
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+
+    if (Array.isArray(parsed.adminData)) {
+      adminData.splice(0, adminData.length, ...parsed.adminData);
+    }
+    if (Array.isArray(parsed.overviewData)) {
+      overviewData.splice(0, overviewData.length, ...parsed.overviewData);
+    }
+    if (Array.isArray(parsed.plannerData)) {
+      plannerData.splice(0, plannerData.length, ...parsed.plannerData);
+    }
+    if (parsed.clientIdeaAssignment && typeof parsed.clientIdeaAssignment === 'object') {
+      Object.keys(clientIdeaAssignment).forEach((k) => delete clientIdeaAssignment[k]);
+      Object.assign(clientIdeaAssignment, parsed.clientIdeaAssignment);
+    }
+    if (parsed.adminExpectedRevenue && typeof parsed.adminExpectedRevenue === 'object') {
+      Object.keys(adminExpectedRevenue).forEach((k) => delete adminExpectedRevenue[k]);
+      Object.assign(adminExpectedRevenue, parsed.adminExpectedRevenue);
+    }
+  } catch (error) {
+    console.warn('Unable to load saved state from browser storage.', error);
+  }
+}
+
+function persistState() {
+  const state = {
+    adminData,
+    overviewData,
+    plannerData,
+    clientIdeaAssignment,
+    adminExpectedRevenue,
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn('Unable to save state to browser storage.', error);
+  }
+}
 
 const adminBody = document.querySelector('#adminTable tbody');
 const adminRevenueBody = document.querySelector('#adminRevenueTable tbody');
@@ -364,6 +409,7 @@ if (submitIdeaAssign) {
     selectedClients.forEach((clientRef) => {
       clientIdeaAssignment[clientRef] = [...new Set(selectedIdeaIds)];
     });
+    persistState();
 
     document.querySelectorAll('.assign-client-check').forEach((check) => {
       check.checked = false;
@@ -384,18 +430,21 @@ if (submitIdeaAssign) {
 
 document.getElementById('addAdminRow').addEventListener('click', () => {
   adminData.push({ ref: '', allocationId: '', clientCode: '', clientName: '' });
+  persistState();
   renderAdmin();
   renderPlanner();
 });
 
 document.getElementById('addOverviewRow').addEventListener('click', () => {
   overviewData.push({ ideaId: '', stock: '', tradeName: '', expiry: '', strike: 0, peCe: 'CE', buySell: 'BUY', lotSize: 0, expectedPremiumPoints: 0 });
+  persistState();
   renderOverview();
   renderPlanner();
 });
 
 document.getElementById('addPlannerRow').addEventListener('click', () => {
   plannerData.push({ clientRef: '', monthlyTarget: 0, slot: '', ideaId: '', intendedPct: 0.5 });
+  persistState();
   renderPlanner();
 });
 
@@ -521,7 +570,7 @@ function renderAdmin() {
     `;
 
     tr.querySelectorAll('input').forEach((input) => {
-      input.addEventListener('change', (e) => {
+      input.addEventListener('input', (e) => {
         const key = e.target.dataset.k;
         const newValue = e.target.value;
         const oldValue = adminData[i][key];
@@ -536,12 +585,14 @@ function renderAdmin() {
         }
 
         adminData[i][key] = newValue;
+        persistState();
         renderPlanner();
       });
     });
 
     tr.querySelector('.delete').addEventListener('click', () => {
       adminData.splice(i, 1);
+      persistState();
       renderAdmin();
       renderPlanner();
     });
@@ -576,6 +627,7 @@ function renderAdminRevenue() {
     input.addEventListener('change', (e) => {
       const clientRef = e.target.dataset.clientRef;
       adminExpectedRevenue[clientRef] = Number(e.target.value || 0);
+      persistState();
     });
   });
 
@@ -629,6 +681,7 @@ function renderOverview() {
           row[key] = e.target.value;
         }
 
+        persistState();
         renderOverview();
         renderPlanner();
       });
@@ -636,6 +689,7 @@ function renderOverview() {
 
     tr.querySelector('.delete').addEventListener('click', () => {
       overviewData.splice(i, 1);
+      persistState();
       renderOverview();
       renderPlanner();
     });
@@ -688,12 +742,14 @@ function renderPlanner() {
           plannerData[i].ideaId = clientIdeaAssignment[plannerData[i].clientRef][0];
         }
 
+        persistState();
         renderPlanner();
       });
     });
 
     tr.querySelector('.delete').addEventListener('click', () => {
       plannerData.splice(i, 1);
+      persistState();
       renderPlanner();
     });
 
@@ -780,6 +836,8 @@ function exportPlannerCsv() {
   link.click();
   URL.revokeObjectURL(link.href);
 }
+
+loadPersistedState();
 
 renderAdmin();
 renderAdminRevenue();
