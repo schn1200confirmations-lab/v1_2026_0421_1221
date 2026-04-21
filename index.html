@@ -105,6 +105,7 @@
           <div class="idea-tabs">
             <button class="idea-tab-btn active" data-idea-tab="assign">Assign</button>
             <button class="idea-tab-btn" data-idea-tab="planner">Idea Planner</button>
+            <button class="idea-tab-btn" data-idea-tab="trade-decider">Trade Decider</button>
           </div>
 
           <div id="ideaSelectAssignPanel" class="idea-tab-panel active">
@@ -157,6 +158,7 @@
                   <th>Client Ref</th>
                   <th>Client Code</th>
                   <th>Client Name</th>
+                  <th>Expected Revenue</th>
                   <th>Stock</th>
                   <th>Trade Name</th>
                   <th>Expiry</th>
@@ -172,6 +174,42 @@
               <tbody></tbody>
             </table>
           </div>
+
+          <div id="tradeDeciderPanel" class="idea-tab-panel hidden-view">
+            <div class="section-head">
+              <h3>Trade Decider</h3>
+              <div>
+                <label for="tradeDeciderFilter">Filter by Idea ID</label>
+                <select id="tradeDeciderFilter"></select>
+              </div>
+            </div>
+
+            <table id="tradeDeciderTable">
+              <thead>
+                <tr>
+                  <th>Idea ID</th>
+                  <th>Client Ref</th>
+                  <th>Client Code</th>
+                  <th>Client Name</th>
+                  <th>Expected Revenue</th>
+                  <th>Intended Target %</th>
+                  <th>Revenue Needed</th>
+                  <th>Stock</th>
+                  <th>Trade Name</th>
+                  <th>Expiry</th>
+                  <th>Strike</th>
+                  <th>PE/CE</th>
+                  <th>BUY/SELL</th>
+                  <th>Lot Size</th>
+                  <th>Expected Premium Points</th>
+                  <th>Expected/Lots RS</th>
+                  <th>In Hand Prem</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
         </section>
 
         <section id="view-planner" class="view card hidden-view">

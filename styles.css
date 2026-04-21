@@ -429,7 +429,8 @@ input, select {
   #overviewTable,
   #plannerTable,
   #ideaAssignSummaryTable,
-  #ideaPlannerTable {
+  #ideaPlannerTable,
+  #tradeDeciderTable {
     min-width: 100%;
   }
 
@@ -438,7 +439,8 @@ input, select {
   #overviewTable thead,
   #plannerTable thead,
   #ideaAssignSummaryTable thead,
-  #ideaPlannerTable thead {
+  #ideaPlannerTable thead,
+  #tradeDeciderTable thead {
     display: none;
   }
 
@@ -447,7 +449,8 @@ input, select {
   #overviewTable tbody tr,
   #plannerTable tbody tr,
   #ideaAssignSummaryTable tbody tr,
-  #ideaPlannerTable tbody tr {
+  #ideaPlannerTable tbody tr,
+  #tradeDeciderTable tbody tr {
     display: grid;
     grid-template-columns: 1fr;
     gap: 6px;
@@ -463,7 +466,8 @@ input, select {
   #overviewTable td,
   #plannerTable td,
   #ideaAssignSummaryTable td,
-  #ideaPlannerTable td {
+  #ideaPlannerTable td,
+  #tradeDeciderTable td {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -479,7 +483,8 @@ input, select {
   #overviewTable td::before,
   #plannerTable td::before,
   #ideaAssignSummaryTable td::before,
-  #ideaPlannerTable td::before {
+  #ideaPlannerTable td::before,
+  #tradeDeciderTable td::before {
     content: attr(data-label);
     font-size: 11px;
     font-weight: 700;

@@ -14,6 +14,7 @@ const plannerData = [
 
 const clientIdeaAssignment = {};
 const adminExpectedRevenue = {};
+const tradeDeciderIntendedPct = {};
 const STORAGE_KEY = 'fno_planner_state_v1';
 
 function loadPersistedState() {
@@ -39,6 +40,10 @@ function loadPersistedState() {
       Object.keys(adminExpectedRevenue).forEach((k) => delete adminExpectedRevenue[k]);
       Object.assign(adminExpectedRevenue, parsed.adminExpectedRevenue);
     }
+    if (parsed.tradeDeciderIntendedPct && typeof parsed.tradeDeciderIntendedPct === 'object') {
+      Object.keys(tradeDeciderIntendedPct).forEach((k) => delete tradeDeciderIntendedPct[k]);
+      Object.assign(tradeDeciderIntendedPct, parsed.tradeDeciderIntendedPct);
+    }
   } catch (error) {
     console.warn('Unable to load saved state from browser storage.', error);
   }
@@ -51,6 +56,7 @@ function persistState() {
     plannerData,
     clientIdeaAssignment,
     adminExpectedRevenue,
+    tradeDeciderIntendedPct,
   };
 
   try {
@@ -80,6 +86,9 @@ const ideaAssignPanel = document.getElementById('ideaSelectAssignPanel');
 const ideaPlannerPanel = document.getElementById('ideaPlannerPanel');
 const ideaPlannerFilter = document.getElementById('ideaPlannerFilter');
 const ideaPlannerBody = document.querySelector('#ideaPlannerTable tbody');
+const tradeDeciderPanel = document.getElementById('tradeDeciderPanel');
+const tradeDeciderFilter = document.getElementById('tradeDeciderFilter');
+const tradeDeciderBody = document.querySelector('#tradeDeciderTable tbody');
 let searchQuery = '';
 
 
@@ -123,7 +132,7 @@ if (menuToggle && shell) {
 
 
 function applyTableSearch() {
-  const tables = ['#adminTable', '#adminRevenueTable', '#overviewTable', '#plannerTable', '#ideaPlannerTable'];
+  const tables = ['#adminTable', '#adminRevenueTable', '#overviewTable', '#plannerTable', '#ideaPlannerTable', '#tradeDeciderTable'];
 
   tables.forEach((selector) => {
     const rows = document.querySelectorAll(`${selector} tbody tr`);
@@ -144,43 +153,58 @@ if (searchInput) {
 
 
 function switchIdeaTab(tabName) {
-  if (!ideaAssignPanel || !ideaPlannerPanel) return;
+  const panels = {
+    assign: ideaAssignPanel,
+    planner: ideaPlannerPanel,
+    'trade-decider': tradeDeciderPanel,
+  };
 
-  const showAssign = tabName === 'assign';
-  ideaAssignPanel.classList.toggle('hidden-view', !showAssign);
-  ideaAssignPanel.classList.toggle('active-view', showAssign);
-  ideaPlannerPanel.classList.toggle('hidden-view', showAssign);
-  ideaPlannerPanel.classList.toggle('active-view', !showAssign);
+  Object.entries(panels).forEach(([name, panel]) => {
+    if (!panel) return;
+    const isActive = name === tabName;
+    panel.classList.toggle('hidden-view', !isActive);
+    panel.classList.toggle('active-view', isActive);
+  });
 
   ideaTabButtons.forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.ideaTab === tabName);
   });
 }
 
+function getIdeaAssignments(activeFilter = '') {
+  return Object.entries(clientIdeaAssignment)
+    .flatMap(([clientRef, ideaIds]) => (ideaIds || []).map((ideaId) => {
+      const client = adminData.find((x) => x.ref === clientRef) || {};
+      const idea = overviewData.find((x) => x.ideaId === ideaId) || {};
+      const expectedRevenue = Number(adminExpectedRevenue[clientRef] || 0);
+      return { clientRef, ideaId, client, idea, expectedRevenue };
+    }))
+    .filter(({ ideaId }) => !activeFilter || ideaId === activeFilter);
+}
+
+function setIdeaFilterOptions(selectEl) {
+  if (!selectEl) return;
+  const selectedFilter = selectEl.value;
+  const ideaIds = overviewData.map((x) => x.ideaId).filter(Boolean);
+  selectEl.innerHTML = ['<option value="">All Ideas</option>', ...ideaIds.map((id) => `<option ${selectedFilter === id ? 'selected' : ''} value="${id}">${id}</option>`)].join('');
+}
+
 function renderIdeaPlannerTable() {
   if (!ideaPlannerBody || !ideaPlannerFilter) return;
 
-  const selectedFilter = ideaPlannerFilter.value;
-  const ideaIds = overviewData.map((x) => x.ideaId).filter(Boolean);
-  ideaPlannerFilter.innerHTML = ['<option value="">All Ideas</option>', ...ideaIds.map((id) => `<option ${selectedFilter === id ? 'selected' : ''} value="${id}">${id}</option>`)].join('');
-
-  const activeFilter = ideaPlannerFilter.value;
-  const assignments = Object.entries(clientIdeaAssignment)
-    .flatMap(([clientRef, ideaIds]) => (ideaIds || []).map((ideaId) => [clientRef, ideaId]))
-    .filter(([, ideaId]) => !activeFilter || ideaId === activeFilter);
+  setIdeaFilterOptions(ideaPlannerFilter);
+  const assignments = getIdeaAssignments(ideaPlannerFilter.value);
 
   ideaPlannerBody.innerHTML = '';
 
-  assignments.forEach(([clientRef, ideaId]) => {
-    const client = adminData.find((x) => x.ref === clientRef) || {};
-    const idea = overviewData.find((x) => x.ideaId === ideaId) || {};
-
+  assignments.forEach(({ clientRef, ideaId, client, idea, expectedRevenue }) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td data-label="Idea ID">${ideaId}</td>
       <td data-label="Client Ref">${clientRef}</td>
       <td data-label="Client Code">${client.clientCode || ''}</td>
       <td data-label="Client Name">${client.clientName || ''}</td>
+      <td data-label="Expected Revenue">${toMoney(expectedRevenue)}</td>
       <td data-label="Stock">${idea.stock || ''}</td>
       <td data-label="Trade Name">${idea.tradeName || ''}</td>
       <td data-label="Expiry">${idea.expiry || ''}</td>
@@ -197,9 +221,65 @@ function renderIdeaPlannerTable() {
 
   if (assignments.length === 0) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td data-label="Info" colspan="14">No clients assigned for selected Idea ID.</td>';
+    tr.innerHTML = '<td data-label="Info" colspan="15">No clients assigned for selected Idea ID.</td>';
     ideaPlannerBody.appendChild(tr);
   }
+
+  applyTableSearch();
+}
+
+function renderTradeDeciderTable() {
+  if (!tradeDeciderBody || !tradeDeciderFilter) return;
+
+  setIdeaFilterOptions(tradeDeciderFilter);
+  const assignments = getIdeaAssignments(tradeDeciderFilter.value);
+
+  tradeDeciderBody.innerHTML = '';
+
+  assignments.forEach(({ clientRef, ideaId, client, idea, expectedRevenue }) => {
+    const key = `${clientRef}__${ideaId}`;
+    const intendedPct = Number(tradeDeciderIntendedPct[key] ?? 0);
+    const revenueNeeded = expectedRevenue * intendedPct;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td data-label="Idea ID">${ideaId}</td>
+      <td data-label="Client Ref">${clientRef}</td>
+      <td data-label="Client Code">${client.clientCode || ''}</td>
+      <td data-label="Client Name">${client.clientName || ''}</td>
+      <td data-label="Expected Revenue">${toMoney(expectedRevenue)}</td>
+      <td data-label="Intended Target %"><input type="number" min="0" max="100" step="1" class="trade-intended-input" data-trade-key="${key}" value="${Math.round(intendedPct * 100)}"></td>
+      <td data-label="Revenue Needed">${toMoney(revenueNeeded)}</td>
+      <td data-label="Stock">${idea.stock || ''}</td>
+      <td data-label="Trade Name">${idea.tradeName || ''}</td>
+      <td data-label="Expiry">${idea.expiry || ''}</td>
+      <td data-label="Strike">${idea.strike || ''}</td>
+      <td data-label="PE/CE">${idea.peCe || ''}</td>
+      <td data-label="BUY/SELL">${idea.buySell || ''}</td>
+      <td data-label="Lot Size">${idea.lotSize || 0}</td>
+      <td data-label="Expected Premium Points">${idea.expectedPremiumPoints || 0}</td>
+      <td data-label="Expected/Lots RS">${toMoney(expectedLotsRs(idea))}</td>
+      <td data-label="In Hand Prem">${toMoney(inHandPrem(idea))}</td>
+    `;
+    tradeDeciderBody.appendChild(tr);
+  });
+
+  if (assignments.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td data-label="Info" colspan="17">No clients assigned for selected Idea ID.</td>';
+    tradeDeciderBody.appendChild(tr);
+  }
+
+  tradeDeciderBody.querySelectorAll('.trade-intended-input').forEach((input) => {
+    input.addEventListener('input', (e) => {
+      const key = e.target.dataset.tradeKey;
+      const value = Number(e.target.value || 0);
+      const normalized = Math.min(100, Math.max(0, value));
+      tradeDeciderIntendedPct[key] = normalized / 100;
+      persistState();
+      renderTradeDeciderTable();
+    });
+  });
 
   applyTableSearch();
 }
@@ -212,6 +292,9 @@ ideaTabButtons.forEach((btn) => {
     if (tabName === 'planner') {
       renderIdeaPlannerTable();
     }
+    if (tabName === 'trade-decider') {
+      renderTradeDeciderTable();
+    }
   });
 });
 
@@ -221,6 +304,11 @@ if (ideaPlannerFilter) {
   });
 }
 
+if (tradeDeciderFilter) {
+  tradeDeciderFilter.addEventListener('change', () => {
+    renderTradeDeciderTable();
+  });
+}
 
 function getSelectedIdeaIds() {
   return [...document.querySelectorAll('.idea-assign-select')]
@@ -365,6 +453,7 @@ function renderIdeaSelectPage() {
   syncSelectAllState();
   renderIdeaAssignSummary();
   renderIdeaPlannerTable();
+  renderTradeDeciderTable();
 }
 
 if (addAnotherIdeaBtn) {
@@ -844,6 +933,7 @@ renderAdminRevenue();
 renderOverview();
 renderIdeaSelectPage();
 renderIdeaPlannerTable();
+renderTradeDeciderTable();
 switchIdeaTab('assign');
 renderPlanner();
 
